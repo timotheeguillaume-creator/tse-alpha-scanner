@@ -3,20 +3,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tokyo Alpha Scan</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta http-equiv="refresh" content="60"> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background-color: #0e1117; color: #ffffff; padding: 20px; font-family: sans-serif; }
-        .table { border-color: #333; }
-        .table-dark { background-color: #161b22; }
-        h1 { color: #58a6ff; font-weight: bold; }
-        .update-time { color: #8b949e; font-size: 0.9em; }
+        body { background-color: #0d1117; color: #c9d1d9; padding: 30px; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+        .container { max-width: 1000px; }
+        h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        .status-bar { background: #161b22; border: 1px solid #30363d; padding: 10px; border-radius: 6px; margin-bottom: 20px; color: #8b949e; }
+        .table { border-color: #30363d; }
+        .table-dark { background-color: #0d1117; }
+        .badge-long { background-color: #238636; color: white; }
+        .badge-short { background-color: #da3633; color: white; }
+        .badge-neutral { background-color: #6e7681; color: white; }
     </style>
 </head>
 <body>
-    <h1>🇯🇵 TSE Morning Alpha Scanner</h1>
-    <p class="update-time">Dernière mise à jour : 2026-03-30 02:20 (Tokyo Time)</p>
-    <table border="1" class="dataframe table table-dark table-striped">
+    <div class="container">
+        <h1>🇯🇵 TSE Alpha Scanner</h1>
+        <div class="status-bar">
+            🟢 <b>LIVE STATUS :</b> Mis à jour à <b>2026-03-30 11:22:54</b> (Tokyo Time)
+        </div>
+        <div class="table-responsive">
+            <table class="dataframe table table-dark table-hover">
   <thead>
     <tr style="text-align: right;">
       <th>Secteur</th>
@@ -29,143 +36,144 @@
   </thead>
   <tbody>
     <tr>
-      <td>Foods</td>
-      <td>13xx - 14xx</td>
-      <td>T17FD</td>
-      <td>95.0%</td>
+      <td>Banks</td>
+      <td>83xx - 84xx</td>
+      <td>T17B</td>
+      <td>54.9%</td>
       <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Auto &amp; Transport</td>
-      <td>72xx</td>
-      <td>T17ATE</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Electric Power &amp; Gas</td>
       <td>95xx</td>
       <td>T17EPG</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Transp. &amp; Logistics</td>
-      <td>90xx - 93xx</td>
-      <td>T17TL</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>54.5%</td>
+      <td>❄️ Négatif</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Real Estate</td>
       <td>88xx - 89xx</td>
       <td>T17RE</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Financials</td>
-      <td>85xx - 87xx</td>
-      <td>T17FIN</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Banks</td>
-      <td>83xx - 84xx</td>
-      <td>T17B</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>52.7%</td>
+      <td>❄️ Négatif</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Retail Trade</td>
       <td>82xx</td>
       <td>T17RT</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>51.8%</td>
+      <td>❄️ Négatif</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
-      <td>Electric &amp; Precision</td>
-      <td>65xx - 71xx</td>
-      <td>T17EAPI</td>
-      <td>95.0%</td>
+      <td>Foods</td>
+      <td>13xx - 14xx</td>
+      <td>T17FD</td>
+      <td>49.1%</td>
       <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Energy Resources</td>
-      <td>16xx / 50xx - 53xx</td>
-      <td>T17ER</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Machinery</td>
-      <td>60xx - 64xx</td>
-      <td>T17M</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Steel &amp; Non-ferrous</td>
-      <td>54xx - 59xx</td>
-      <td>T17SNM</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Pharmaceutical</td>
-      <td>45xx</td>
-      <td>T17PHR</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Raw Mat. &amp; Chemicals</td>
-      <td>35xx - 44xx</td>
-      <td>T17RMC</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
-    </tr>
-    <tr>
-      <td>Commercial/Wholesale</td>
-      <td>20xx - 34xx / 80xx</td>
-      <td>T17CWT</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Construction</td>
       <td>17xx - 19xx</td>
       <td>T17CM</td>
-      <td>95.0%</td>
+      <td>49.1%</td>
       <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Pharmaceutical</td>
+      <td>45xx</td>
+      <td>T17PHR</td>
+      <td>49.1%</td>
+      <td>➖ Neutre</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Financials</td>
+      <td>85xx - 87xx</td>
+      <td>T17FIN</td>
+      <td>49.1%</td>
+      <td>➖ Neutre</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Transp. &amp; Logistics</td>
+      <td>90xx - 93xx</td>
+      <td>T17TL</td>
+      <td>48.2%</td>
+      <td>🔥 Positif</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Energy Resources</td>
+      <td>16xx / 50xx-53xx</td>
+      <td>T17ER</td>
+      <td>48.2%</td>
+      <td>🔥 Positif</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Raw Mat. &amp; Chemicals</td>
+      <td>35xx - 44xx</td>
+      <td>T17RMC</td>
+      <td>46.4%</td>
+      <td>🔥 Positif</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Steel &amp; Non-ferrous</td>
+      <td>54xx - 59xx</td>
+      <td>T17SNM</td>
+      <td>46.4%</td>
+      <td>🔥 Positif</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Commercial/Wholesale</td>
+      <td>20xx - 34xx / 80xx</td>
+      <td>T17CWT</td>
+      <td>45.5%</td>
+      <td>🔥 Positif</td>
+      <td>🟡 NEUTRE</td>
+    </tr>
+    <tr>
+      <td>Machinery</td>
+      <td>60xx - 64xx</td>
+      <td>T17M</td>
+      <td>44.5%</td>
+      <td>🔥 Positif</td>
+      <td>🔴 SHORT</td>
     </tr>
     <tr>
       <td>IT &amp; Services</td>
       <td>94xx / 96xx+</td>
       <td>T17ISO</td>
-      <td>95.0%</td>
-      <td>➖ Neutre</td>
-      <td>🟢 LONG</td>
+      <td>43.6%</td>
+      <td>🔥 Positif</td>
+      <td>🔴 SHORT</td>
+    </tr>
+    <tr>
+      <td>Auto &amp; Transport</td>
+      <td>72xx</td>
+      <td>T17ATE</td>
+      <td>42.7%</td>
+      <td>🔥 Positif</td>
+      <td>🔴 SHORT</td>
+    </tr>
+    <tr>
+      <td>Electric &amp; Precision</td>
+      <td>65xx - 71xx</td>
+      <td>T17EAPI</td>
+      <td>41.8%</td>
+      <td>🔥 Positif</td>
+      <td>🔴 SHORT</td>
     </tr>
   </tbody>
 </table>
-    <footer class="mt-4 text-muted">Analyse basée sur la clôture US et le taux de change JPY.</footer>
+        </div>
+    </div>
 </body>
 </html>
