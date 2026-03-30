@@ -2,27 +2,49 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import pytz
+import urllib.request
+import xml.etree.ElementTree as ET
 
-# --- CONFIGURATION DES SECTEURS (Ta liste exacte + Mapping ADR/Drivers) ---
+# --- CONFIGURATION DES SECTEURS ---
 sectors = [
     {"id": "T17FD",  "name": "Foods", "range": "13xx - 14xx", "exp_sens": 0.1, "adr": None},
-    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx-53xx", "exp_sens": 0.2, "comm": "CL=F", "comm_name": "Oil"},
+    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx-53xx", "exp_sens": 0.05, "comm": "CL=F", "comm_name": "Oil"},
     {"id": "T17CM",  "name": "Construction", "range": "17xx - 19xx", "exp_sens": 0.1, "adr": None},
     {"id": "T17CWT", "name": "Commercial/Wholesale", "range": "20xx - 34xx / 80xx", "exp_sens": 0.5, "adr": "8058.T", "adr_name": "Mitsubishi"},
     {"id": "T17RMC", "name": "Raw Mat. & Chemicals", "range": "35xx - 44xx", "exp_sens": 0.4, "adr": None},
     {"id": "T17PHR", "name": "Pharmaceutical", "range": "45xx", "exp_sens": 0.1, "adr": "TAK", "adr_name": "Takeda"},
-    {"id": "T17SNM", "name": "Steel & Non-ferrous", "range": "54xx - 59xx", "exp_sens": 0.4, "comm": "HG=F", "comm_name": "Copper"},
+    {"id": "T17SNM", "name": "Steel & Non-ferrous", "range": "54xx - 59xx", "exp_sens": 0.3, "comm": "HG=F", "comm_name": "Copper"},
     {"id": "T17M",   "name": "Machinery", "range": "60xx - 64xx", "exp_sens": 0.6, "adr": None},
     {"id": "T17EAPI", "name": "Electric & Precision", "range": "65xx - 71xx", "exp_sens": 0.9, "adr": "SONY", "adr_name": "Sony"},
     {"id": "T17ATE", "name": "Auto & Transport", "range": "72xx", "exp_sens": 0.8, "adr": "TM", "adr_name": "Toyota"},
     {"id": "T17RT",  "name": "Retail Trade", "range": "82xx", "exp_sens": -0.2, "adr": None},
-    {"id": "T17B",   "name": "Banks", "range": "83xx - 84xx", "exp_sens": 0.0, "rate_sens": 0.9, "adr": "MUFG", "adr_name": "MUFG Bank"},
+    {"id": "T17B",   "name": "Banks", "range": "83xx - 84xx", "exp_sens": 0.0, "rate_sens": 1.2, "adr": "MUFG", "adr_name": "MUFG Bank"},
     {"id": "T17FIN", "name": "Financials", "range": "85xx - 87xx", "exp_sens": 0.1, "adr": None},
     {"id": "T17RE",  "name": "Real Estate", "range": "88xx - 89xx", "exp_sens": -0.3, "adr": None},
     {"id": "T17TL",  "name": "Transp. & Logistics", "range": "90xx - 93xx", "exp_sens": 0.2, "adr": None},
-    {"id": "T17EPG", "name": "Electric Power & Gas", "range": "95xx", "exp_sens": -0.5, "comm": "CL=F", "comm_name": "Oil (Inv.)"},
+    {"id": "T17EPG", "name": "Electric Power & Gas", "range": "95xx", "exp_sens": -0.4, "comm": "CL=F", "comm_name": "Oil (Inv.)", "is_inverse": True, "is_safe_haven": True},
     {"id": "T17ISO", "name": "IT & Services", "range": "94xx / 96xx+", "exp_sens": 0.7, "adr": "NTTYY", "adr_name": "NTT"}
 ]
+
+def get_news_intel():
+    """Scanne les news japonaises pour les catalyseurs Alpha."""
+    try:
+        url = "https://news.google.com/rss/search?q=Nikkei+BoJ+Nuclear+Yen+intervention&hl=en-US&gl=US&ceid=US:en"
+        with urllib.request.urlopen(url) as response:
+            xml_data = response.read()
+        root = ET.fromstring(xml_data)
+        items = root.findall('.//item')[:10]
+        
+        intel = {"intervention": False, "nuclear": False, "boj_hike": False, "latest_titles": []}
+        for item in items:
+            title = item.find('title').text.upper()
+            intel["latest_titles"].append(title)
+            if any(x in title for x in ["INTERVENTION", "MOF", "CURRENCY WATCH"]): intel["intervention"] = True
+            if any(x in title for x in ["NUCLEAR", "RESTART", "TEPCO"]): intel["nuclear"] = True
+            if any(x in title for x in ["BOJ", "RATE HIKE", "UEDA"]): intel["boj_hike"] = True
+        return intel
+    except:
+        return {"intervention": False, "nuclear": False, "boj_hike": False, "latest_titles": []}
 
 def get_perf(ticker):
     try:
@@ -35,65 +57,57 @@ def get_perf(ticker):
     except: return 0.0
 
 def run_analysis():
-    # Données Macro
-    ndq = get_perf("^IXIC")
-    jpy = get_perf("JPY=X")
-    rates = get_perf("^TNX")
-    vix = get_perf("^VIX")
-    fut = get_perf("NIY=F") # Nikkei Futures
-    oil = get_perf("CL=F")
-    copper = get_perf("HG=F")
+    ndq, jpy, rates = get_perf("^IXIC"), get_perf("JPY=X"), get_perf("^TNX")
+    vix, fut, oil, copper = get_perf("^VIX"), get_perf("NIY=F"), get_perf("CL=F"), get_perf("HG=F")
+    news = get_news_intel()
 
     results = []
     for s in sectors:
-        # Calcul Probabilité (Logic Genius sans le poids négatif du VIX)
         prob = 50.0
-        prob += (ndq * s['exp_sens'] * 5)      # Impact Nasdaq
-        prob += (jpy * s['exp_sens'] * 15)     # Impact Yen
-        prob += (fut * 10)                     # Pression Futures Nikkei
+        prob += (ndq * s['exp_sens'] * 4) + (fut * 12) + (jpy * s['exp_sens'] * 18)
         
         if 'rate_sens' in s:
-            prob += (rates * s['rate_sens'] * 10)
-        
-        # Impact spécifique ADR ou Comm
+            prob += (rates * s['rate_sens'] * 15)
+            if news["boj_hike"]: prob += 10 # Boost Banques si News BoJ
+
         driver_label = "Macro"
         if s.get("adr"):
-            adr_p = get_perf(s["adr"])
-            prob += (adr_p * 15)
+            prob += (get_perf(s["adr"]) * 20)
             driver_label = s["adr_name"]
         elif s.get("comm"):
             c_p = oil if s["comm"] == "CL=F" else copper
-            prob += (c_p * s["exp_sens"] * 10)
+            if s.get("is_inverse"):
+                # --- LOGIQUE SAFE HAVEN + NEWS ---
+                panic_buffer = 0.5 if vix > 0 else 1.0
+                prob -= (c_p * 25 * panic_buffer)
+                if fut < -0.6: prob += 15 
+                if news["nuclear"]: prob += 20 # Catalyst majeur
+            else:
+                prob += (c_p * 25)
             driver_label = s["comm_name"]
 
-        prob = max(10.0, min(90.0, prob)) # Clamp sécurisé
+        if news["intervention"] and s["exp_sens"] > 0.5: prob -= 15 # Malus exportateurs
 
-        results.append({
-            "Secteur": s['name'],
-            "Codes": s['range'],
-            "ID": s['id'],
-            "Prob. Hausse": prob, # On garde en float pour le tri
-            "Driver": driver_label,
-            "Impact Yen": "🔥 Positif" if (jpy * s['exp_sens']) > 0.2 else "❄️ Négatif" if (jpy * s['exp_sens']) < -0.2 else "➖ Neutre",
-            "Biais": "🟢 LONG" if prob > 55 else "🔴 SHORT" if prob < 45 else "🟡 NEUTRE"
-        })
+        prob = max(5.0, min(95.0, prob))
+        results.append({"Secteur": s['name'], "Codes": s['range'], "ID": s['id'], "Score": prob, 
+                        "Prob. Hausse": f"{prob:.1f}%", "Driver": driver_label, 
+                        "Impact Yen": "🔥 Positif" if (jpy * s['exp_sens']) > 0.15 else "❄️ Négatif" if (jpy * s['exp_sens']) < -0.15 else "➖ Neutre",
+                        "Biais": "🟢 LONG" if prob > 55 else "🔴 SHORT" if prob < 45 else "🟡 NEUTRE"})
     
-    # Tri par probabilité décroissante
-    df = pd.DataFrame(results).sort_values(by="Prob. Hausse", ascending=False)
-    
-    # Formatage de la probabilité en string pour l'affichage après le tri
-    df["Prob. Hausse"] = df["Prob. Hausse"].apply(lambda x: f"{x:.1f}%")
-    
-    return df, vix, fut, jpy
+    df = pd.DataFrame(results).sort_values(by="Score", ascending=False).drop(columns=['Score'])
+    return df, vix, fut, jpy, news
 
 # --- GÉNÉRATION HTML ---
-df_final, vix_val, fut_val, jpy_val = run_analysis()
+df_final, vix_val, fut_val, jpy_val, news = run_analysis()
 tokyo_tz = pytz.timezone('Asia/Tokyo')
 now = datetime.now(tokyo_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-# Sentiment Global
-vix_status = "⚠️ PANIC HIGH" if vix_val > 5 else "✅ STABLE"
-mkt_status = "🚀 BULLISH" if fut_val > 0.5 else "🩸 BEARISH" if fut_val < -0.5 else "➖ NEUTRAL"
+# Badges News
+news_html = ""
+if news["intervention"]: news_html += '<span class="badge bg-danger me-2">🚨 YEN INTERVENTION RISK</span>'
+if news["nuclear"]: news_html += '<span class="badge bg-warning text-dark me-2">☢️ NUCLEAR RESTART NEWS</span>'
+if news["boj_hike"]: news_html += '<span class="badge bg-primary me-2">🏦 BOJ HAWKISH BIAS</span>'
+if not news_html: news_html = '<span class="text-muted">No major Alpha News detected.</span>'
 
 html = f"""
 <!DOCTYPE html>
@@ -105,12 +119,11 @@ html = f"""
         body {{ background-color: #0d1117; color: #c9d1d9; padding: 20px; font-family: -apple-system,sans-serif; }}
         .container {{ max-width: 1100px; }}
         h1 {{ color: #58a6ff; font-weight: bold; border-bottom: 1px solid #30363d; padding-bottom: 10px; }}
-        .status-bar {{ background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+        .status-bar {{ background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 10px; }}
+        .news-bar {{ background: #1c2128; border: 1px solid #444c56; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #58a6ff; }}
         .card-stat {{ background: #1c2128; border: 1px solid #444c56; padding: 10px; border-radius: 6px; text-align: center; }}
-        .label-stat {{ font-size: 0.8em; color: #8b949e; text-transform: uppercase; }}
         .val-stat {{ font-weight: bold; font-size: 1.1em; color: #58a6ff; }}
         .table {{ border-color: #30363d; color: #c9d1d9; }}
-        .table-dark {{ background-color: #0d1117; }}
     </style>
 </head>
 <body>
@@ -118,19 +131,22 @@ html = f"""
         <h1>🇯🇵 TSE Alpha Sniper Dashboard</h1>
         
         <div class="status-bar row g-2">
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">VIX Sentiment</div><div class="val-stat">{vix_status}</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Mkt Pressure</div><div class="val-stat">{mkt_status}</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Carry Trade</div><div class="val-stat">{"🔥 ACTIVE" if abs(jpy_val) > 0.3 else "❄️ CALM"}</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Live Status (Seconds)</div><div class="val-stat">{now}</div></div></div>
+            <div class="col-md-3"><div class="card-stat">VIX<br><span class="val-stat">{"⚠️ PANIC" if vix_val > 5 else "✅ STABLE"}</span></div></div>
+            <div class="col-md-3"><div class="card-stat">MKT PRESSURE<br><span class="val-stat">{"🩸 BEARISH" if fut_val < -0.4 else "🚀 BULLISH" if fut_val > 0.4 else "➖ NEUTRAL"}</span></div></div>
+            <div class="col-md-3"><div class="card-stat">CARRY TRADE<br><span class="val-stat">{"🔥 ACTIVE" if abs(jpy_val) > 0.3 else "❄️ CALM"}</span></div></div>
+            <div class="col-md-3"><div class="card-stat">TOKYO TIME<br><span class="val-stat">{now}</span></div></div>
+        </div>
+
+        <div class="news-bar">
+            <small class="text-muted d-block mb-1">MARKET INTELLIGENCE FEED :</small>
+            {news_html}
         </div>
 
         <div class="table-responsive">
             {df_final.to_html(classes='table table-dark table-hover', index=False, border=0)}
         </div>
         
-        <p class="mt-3 small text-muted">
-            <b>Note:</b> Le score Prob. Hausse combine l'arbitrage ADR (Sony, Toyota, etc.), les Futures Nikkei et l'impact monétaire.
-        </p>
+        <p class="mt-3 small text-muted"><b>Logic Engine :</b> Intégration News RSS (Nucléaire/Yen) + Stratégie Valeur Refuge sur 95xx.</p>
     </div>
 </body>
 </html>
