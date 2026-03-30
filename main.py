@@ -2,10 +2,10 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 
-# --- CONFIGURATION DES SECTEURS (Ta liste Pine Script) ---
+# --- CONFIGURATION DES SECTEURS ---
 sectors = [
     {"id": "T17FD",  "name": "Foods", "range": "13xx - 14xx", "exp_sens": 0.1},
-    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx - 53xx", "exp_sens": 0.2},
+    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx-53xx", "exp_sens": 0.2},
     {"id": "T17CM",  "name": "Construction", "range": "17xx - 19xx", "exp_sens": 0.1},
     {"id": "T17CWT", "name": "Commercial/Wholesale", "range": "20xx - 34xx / 80xx", "exp_sens": 0.5},
     {"id": "T17RMC", "name": "Raw Mat. & Chemicals", "range": "35xx - 44xx", "exp_sens": 0.4},
@@ -23,39 +23,45 @@ sectors = [
     {"id": "T17ISO", "name": "IT & Services", "range": "94xx / 96xx+", "exp_sens": 0.7}
 ]
 
-def get_data():
-    # Nasdaq, USD/JPY, US 10Y Yield
-    tickers = ["^IXIC", "JPY=X", "^TNX"]
-    data = yf.download(tickers, period="2d", interval="1d")
-    
-    ndq_pc = ((data['Close']['^IXIC'].iloc[-1] - data['Close']['^IXIC'].iloc[-2]) / data['Close']['^IXIC'].iloc[-2]) * 100
-    jpy_pc = ((data['Close']['JPY=X'].iloc[-1] - data['Close']['JPY=X'].iloc[-2]) / data['Close']['JPY=X'].iloc[-2]) * 100
-    rate_diff = data['Close']['^TNX'].iloc[-1] - data['Close']['^TNX'].iloc[-2]
-    
-    return ndq_pc, jpy_pc, rate_diff
+def get_perf(ticker):
+    try:
+        df = yf.download(ticker, period="5d", interval="1d", progress=False)
+        if len(df) < 2: return 0.0
+        # On prend les deux dernières clôtures valides
+        c1 = df['Close'].iloc[-1].item()
+        c2 = df['Close'].iloc[-2].item()
+        return ((c1 - c2) / c2) * 100
+    except:
+        return 0.0
 
 def run_analysis():
-    ndq, jpy, rates = get_data()
+    # Récupération individuelle pour éviter qu'une erreur bloque tout
+    ndq = get_perf("^IXIC")
+    jpy = get_perf("JPY=X")
+    rates = get_perf("^TNX") # Ici c'est la variation du rendement 10 ans US
+    
     results = []
-
     for s in sectors:
-        # Calcul de l'impact Yen (USDJPY up = Yen faible = Positif pour exportateurs)
-        yen_impact_score = jpy * s['exp_sens'] * 10
+        # 1. Calcul de l'influence Nasdaq (Beta de secteur)
+        ndq_impact = ndq * s['exp_sens'] * 5
         
-        # Probabilité de base influencée par le Nasdaq et les taux
-        prob = 50.0 + (ndq * s['exp_sens'] * 5) + yen_impact_score
-        if 'rate_sens' in s:
-            prob += (rates * s['rate_sens'] * 50)
+        # 2. Calcul de l'impact Yen (USDJPY up = Yen faible = Bon pour export)
+        # On multiplie par 15 pour donner du poids au change
+        yen_impact_val = jpy * s['exp_sens'] * 15
         
-        prob = max(5, min(95, prob)) # Clamp entre 5% et 95%
+        # 3. Calcul de l'impact Taux (Uniquement pour les banques)
+        rate_impact = (rates * s.get('rate_sens', 0) * 10)
+        
+        # Score final
+        prob = 50.0 + ndq_impact + yen_impact_val + rate_impact
+        prob = max(10, min(90, prob)) # Clamp plus réaliste entre 10% et 90%
         
         results.append({
             "Secteur": s['name'],
             "Codes": s['range'],
-            "ID": s['id'],
             "Prob. Hausse": f"{prob:.1f}%",
-            "Impact Yen": "🔥 Positif" if yen_impact_score > 2 else "❄️ Négatif" if yen_impact_score < -2 else "➖ Neutre",
-            "Biais": "🟢 LONG" if prob > 60 else "🔴 SHORT" if prob < 40 else "🟡 NEUTRE"
+            "Impact Yen": "🔥 Positif" if yen_impact_val > 0.5 else "❄️ Négatif" if yen_impact_val < -0.5 else "➖ Neutre",
+            "Biais": "🟢 LONG" if prob > 55 else "🔴 SHORT" if prob < 45 else "🟡 NEUTRE"
         })
     
     return pd.DataFrame(results).sort_values(by="Prob. Hausse", ascending=False)
@@ -68,21 +74,19 @@ html = f"""
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tokyo Alpha Scan</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body {{ background-color: #0e1117; color: #ffffff; padding: 20px; font-family: sans-serif; }}
-        .table {{ border-color: #333; }}
-        .table-dark {{ background-color: #161b22; }}
-        h1 {{ color: #58a6ff; font-weight: bold; }}
-        .update-time {{ color: #8b949e; font-size: 0.9em; }}
+        body {{ background-color: #0e1117; color: #ffffff; padding: 20px; }}
+        .table {{ border-color: #333; color: white; }}
+        h1 {{ color: #58a6ff; }}
     </style>
 </head>
 <body>
     <h1>🇯🇵 TSE Morning Alpha Scanner</h1>
-    <p class="update-time">Dernière mise à jour : {now} (Tokyo Time)</p>
-    {df.to_html(classes='table table-dark table-striped', index=False)}
-    <footer class="mt-4 text-muted">Analyse basée sur la clôture US et le taux de change JPY.</footer>
+    <p>Dernière mise à jour : {now} (Tokyo Time)</p>
+    <div class="table-responsive">
+        {df.to_html(classes='table table-dark table-striped', index=False)}
+    </div>
 </body>
 </html>
 """
