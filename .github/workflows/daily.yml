@@ -1,0 +1,26 @@
+name: Update TSE Alpha
+on:
+  schedule:
+    - cron: '45 23 * * *' # 8h45 à Tokyo (15 min avant l'open)
+  workflow_dispatch:      # Pour lancer le script manuellement
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install yfinance pandas
+      - name: Run Script
+        run: python main.py
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages
