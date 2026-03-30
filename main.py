@@ -5,7 +5,7 @@ import pytz
 import urllib.request
 import xml.etree.ElementTree as ET
 
-# --- CONFIGURATION DES SECTEURS ---
+# --- CONFIGURATION DES SECTEURS (EPG RÉALIGNÉ) ---
 sectors = [
     {"id": "T17FD",  "name": "Foods", "range": "13xx - 14xx", "exp_sens": 0.1, "adr": None},
     {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx-53xx", "exp_sens": 0.05, "comm": "CL=F", "comm_name": "Oil"},
@@ -22,7 +22,8 @@ sectors = [
     {"id": "T17FIN", "name": "Financials", "range": "85xx - 87xx", "exp_sens": 0.1, "adr": None},
     {"id": "T17RE",  "name": "Real Estate", "range": "88xx - 89xx", "exp_sens": -0.3, "adr": None},
     {"id": "T17TL",  "name": "Transp. & Logistics", "range": "90xx - 93xx", "exp_sens": 0.2, "adr": None},
-    {"id": "T17EPG", "name": "Electric Power & Gas", "range": "95xx", "exp_sens": -0.4, "comm": "CL=F", "comm_name": "Oil (Inv.)", "is_inverse": True, "is_safe_haven": True},
+    # EPG corrigé : Pas d'is_inverse, traité comme un Safe Haven pur
+    {"id": "T17EPG", "name": "Electric Power & Gas", "range": "95xx", "exp_sens": -0.4, "comm": "CL=F", "comm_name": "Oil Proxy", "is_safe_haven": True},
     {"id": "T17ISO", "name": "IT & Services", "range": "94xx / 96xx+", "exp_sens": 0.7, "adr": "NTTYY", "adr_name": "NTT"}
 ]
 
@@ -35,16 +36,15 @@ def get_news_intel():
         root = ET.fromstring(xml_data)
         items = root.findall('.//item')[:10]
         
-        intel = {"intervention": False, "nuclear": False, "boj_hike": False, "latest_titles": []}
+        intel = {"intervention": False, "nuclear": False, "boj_hike": False}
         for item in items:
             title = item.find('title').text.upper()
-            intel["latest_titles"].append(title)
             if any(x in title for x in ["INTERVENTION", "MOF", "CURRENCY WATCH"]): intel["intervention"] = True
             if any(x in title for x in ["NUCLEAR", "RESTART", "TEPCO"]): intel["nuclear"] = True
             if any(x in title for x in ["BOJ", "RATE HIKE", "UEDA"]): intel["boj_hike"] = True
         return intel
     except:
-        return {"intervention": False, "nuclear": False, "boj_hike": False, "latest_titles": []}
+        return {"intervention": False, "nuclear": False, "boj_hike": False}
 
 def get_perf(ticker):
     try:
@@ -64,11 +64,12 @@ def run_analysis():
     results = []
     for s in sectors:
         prob = 50.0
+        # Corrélation Standard
         prob += (ndq * s['exp_sens'] * 4) + (fut * 12) + (jpy * s['exp_sens'] * 18)
         
         if 'rate_sens' in s:
             prob += (rates * s['rate_sens'] * 15)
-            if news["boj_hike"]: prob += 10 # Boost Banques si News BoJ
+            if news["boj_hike"]: prob += 10
 
         driver_label = "Macro"
         if s.get("adr"):
@@ -76,17 +77,22 @@ def run_analysis():
             driver_label = s["adr_name"]
         elif s.get("comm"):
             c_p = oil if s["comm"] == "CL=F" else copper
-            if s.get("is_inverse"):
-                # --- LOGIQUE SAFE HAVEN + NEWS ---
-                panic_buffer = 0.5 if vix > 0 else 1.0
-                prob -= (c_p * 25 * panic_buffer)
-                if fut < -0.6: prob += 15 
-                if news["nuclear"]: prob += 20 # Catalyst majeur
+            
+            # --- LOGIQUE SPÉCIFIQUE EPG (95xx) ---
+            if s.get("is_safe_haven"):
+                # Boost si le marché global baisse (Inversion du sentiment futur)
+                if fut < -0.4: prob += 25 
+                # On suit l'énergie positivement (Oil Proxy)
+                prob += (oil * 15)
+                # News nucléaire = Catalyst surpuissant
+                if news["nuclear"]: prob += 20
             else:
+                # Logique Standard pour le reste (Energy Resources, etc.)
                 prob += (c_p * 25)
+            
             driver_label = s["comm_name"]
 
-        if news["intervention"] and s["exp_sens"] > 0.5: prob -= 15 # Malus exportateurs
+        if news["intervention"] and s["exp_sens"] > 0.5: prob -= 15
 
         prob = max(5.0, min(95.0, prob))
         results.append({"Secteur": s['name'], "Codes": s['range'], "ID": s['id'], "Score": prob, 
@@ -146,7 +152,7 @@ html = f"""
             {df_final.to_html(classes='table table-dark table-hover', index=False, border=0)}
         </div>
         
-        <p class="mt-3 small text-muted"><b>Logic Engine :</b> Intégration News RSS (Nucléaire/Yen) + Stratégie Valeur Refuge sur 95xx.</p>
+        <p class="mt-3 small text-muted"><b>Logic Engine v5.1 :</b> EPG realigné sur l'Énergie + Safe Haven actif. News RSS prioritaires sur exportateurs.</p>
     </div>
 </body>
 </html>
