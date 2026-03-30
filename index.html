@@ -8,12 +8,11 @@
         body { background-color: #0d1117; color: #c9d1d9; padding: 20px; font-family: -apple-system,sans-serif; }
         .container { max-width: 1100px; }
         h1 { color: #58a6ff; font-weight: bold; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .status-bar { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .status-bar { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .news-bar { background: #1c2128; border: 1px solid #444c56; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #58a6ff; }
         .card-stat { background: #1c2128; border: 1px solid #444c56; padding: 10px; border-radius: 6px; text-align: center; }
-        .label-stat { font-size: 0.8em; color: #8b949e; text-transform: uppercase; }
         .val-stat { font-weight: bold; font-size: 1.1em; color: #58a6ff; }
         .table { border-color: #30363d; color: #c9d1d9; }
-        .table-dark { background-color: #0d1117; }
     </style>
 </head>
 <body>
@@ -21,10 +20,15 @@
         <h1>🇯🇵 TSE Alpha Sniper Dashboard</h1>
         
         <div class="status-bar row g-2">
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">VIX Sentiment</div><div class="val-stat">⚠️ PANIC HIGH</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Mkt Pressure</div><div class="val-stat">🩸 BEARISH</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Carry Trade</div><div class="val-stat">❄️ CALM</div></div></div>
-            <div class="col-md-3"><div class="card-stat"><div class="label-stat">Live Status (Seconds)</div><div class="val-stat">2026-03-30 11:54:15</div></div></div>
+            <div class="col-md-3"><div class="card-stat">VIX<br><span class="val-stat">⚠️ PANIC</span></div></div>
+            <div class="col-md-3"><div class="card-stat">MKT PRESSURE<br><span class="val-stat">🩸 BEARISH</span></div></div>
+            <div class="col-md-3"><div class="card-stat">CARRY TRADE<br><span class="val-stat">❄️ CALM</span></div></div>
+            <div class="col-md-3"><div class="card-stat">TOKYO TIME<br><span class="val-stat">2026-03-30 11:58:55</span></div></div>
+        </div>
+
+        <div class="news-bar">
+            <small class="text-muted d-block mb-1">MARKET INTELLIGENCE FEED :</small>
+            <span class="text-muted">No major Alpha News detected.</span>
         </div>
 
         <div class="table-responsive">
@@ -45,25 +49,34 @@
       <td>Energy Resources</td>
       <td>16xx / 50xx-53xx</td>
       <td>T17ER</td>
-      <td>44.4%</td>
+      <td>95.0%</td>
       <td>Oil</td>
       <td>➖ Neutre</td>
-      <td>🔴 SHORT</td>
+      <td>🟢 LONG</td>
+    </tr>
+    <tr>
+      <td>Steel &amp; Non-ferrous</td>
+      <td>54xx - 59xx</td>
+      <td>T17SNM</td>
+      <td>46.1%</td>
+      <td>Copper</td>
+      <td>➖ Neutre</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Real Estate</td>
       <td>88xx - 89xx</td>
       <td>T17RE</td>
-      <td>43.7%</td>
+      <td>45.5%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
-      <td>🔴 SHORT</td>
+      <td>🟡 NEUTRE</td>
     </tr>
     <tr>
       <td>Retail Trade</td>
       <td>82xx</td>
       <td>T17RT</td>
-      <td>42.8%</td>
+      <td>44.8%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -72,7 +85,7 @@
       <td>Foods</td>
       <td>13xx - 14xx</td>
       <td>T17FD</td>
-      <td>39.9%</td>
+      <td>42.7%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -81,7 +94,7 @@
       <td>Construction</td>
       <td>17xx - 19xx</td>
       <td>T17CM</td>
-      <td>39.9%</td>
+      <td>42.7%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -90,7 +103,7 @@
       <td>Financials</td>
       <td>85xx - 87xx</td>
       <td>T17FIN</td>
-      <td>39.9%</td>
+      <td>42.7%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -99,17 +112,8 @@
       <td>Transp. &amp; Logistics</td>
       <td>90xx - 93xx</td>
       <td>T17TL</td>
-      <td>39.0%</td>
+      <td>42.0%</td>
       <td>Macro</td>
-      <td>➖ Neutre</td>
-      <td>🔴 SHORT</td>
-    </tr>
-    <tr>
-      <td>Steel &amp; Non-ferrous</td>
-      <td>54xx - 59xx</td>
-      <td>T17SNM</td>
-      <td>37.6%</td>
-      <td>Copper</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
     </tr>
@@ -117,7 +121,7 @@
       <td>Raw Mat. &amp; Chemicals</td>
       <td>35xx - 44xx</td>
       <td>T17RMC</td>
-      <td>37.1%</td>
+      <td>40.5%</td>
       <td>Macro</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -126,17 +130,8 @@
       <td>Machinery</td>
       <td>60xx - 64xx</td>
       <td>T17M</td>
-      <td>35.2%</td>
+      <td>39.1%</td>
       <td>Macro</td>
-      <td>➖ Neutre</td>
-      <td>🔴 SHORT</td>
-    </tr>
-    <tr>
-      <td>Electric Power &amp; Gas</td>
-      <td>95xx</td>
-      <td>T17EPG</td>
-      <td>32.1%</td>
-      <td>Oil (Inv.)</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
     </tr>
@@ -144,7 +139,7 @@
       <td>Pharmaceutical</td>
       <td>45xx</td>
       <td>T17PHR</td>
-      <td>27.5%</td>
+      <td>26.1%</td>
       <td>Takeda</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -153,7 +148,7 @@
       <td>Electric &amp; Precision</td>
       <td>65xx - 71xx</td>
       <td>T17EAPI</td>
-      <td>23.3%</td>
+      <td>25.0%</td>
       <td>Sony</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -162,8 +157,17 @@
       <td>Banks</td>
       <td>83xx - 84xx</td>
       <td>T17B</td>
-      <td>19.6%</td>
+      <td>18.3%</td>
       <td>MUFG Bank</td>
+      <td>➖ Neutre</td>
+      <td>🔴 SHORT</td>
+    </tr>
+    <tr>
+      <td>Electric Power &amp; Gas</td>
+      <td>95xx</td>
+      <td>T17EPG</td>
+      <td>17.2%</td>
+      <td>Oil (Inv.)</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
     </tr>
@@ -171,7 +175,7 @@
       <td>IT &amp; Services</td>
       <td>94xx / 96xx+</td>
       <td>T17ISO</td>
-      <td>16.6%</td>
+      <td>15.0%</td>
       <td>NTT</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -180,7 +184,7 @@
       <td>Commercial/Wholesale</td>
       <td>20xx - 34xx / 80xx</td>
       <td>T17CWT</td>
-      <td>12.2%</td>
+      <td>7.9%</td>
       <td>Mitsubishi</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -189,7 +193,7 @@
       <td>Auto &amp; Transport</td>
       <td>72xx</td>
       <td>T17ATE</td>
-      <td>10.4%</td>
+      <td>7.2%</td>
       <td>Toyota</td>
       <td>➖ Neutre</td>
       <td>🔴 SHORT</td>
@@ -198,9 +202,7 @@
 </table>
         </div>
         
-        <p class="mt-3 small text-muted">
-            <b>Note:</b> Le score Prob. Hausse combine l'arbitrage ADR (Sony, Toyota, etc.), les Futures Nikkei et l'impact monétaire.
-        </p>
+        <p class="mt-3 small text-muted"><b>Logic Engine :</b> Intégration News RSS (Nucléaire/Yen) + Stratégie Valeur Refuge sur 95xx.</p>
     </div>
 </body>
 </html>
