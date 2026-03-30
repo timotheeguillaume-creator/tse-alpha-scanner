@@ -144,7 +144,7 @@ html = f"""
         </div>
 
         <div class="news-bar">
-            <small class="text-muted d-block mb-1">MARKET INTELLIGENCE FEED :</small>
+            <small class="d-block mb-1">MARKET INTELLIGENCE FEED :</small>
             {news_html}
         </div>
 
