@@ -1,12 +1,11 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
-import pytz
 
-# --- CONFIGURATION DES SECTEURS ---
+# --- CONFIGURATION DES SECTEURS (Ta liste Pine Script) ---
 sectors = [
     {"id": "T17FD",  "name": "Foods", "range": "13xx - 14xx", "exp_sens": 0.1},
-    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx-53xx", "exp_sens": 0.2},
+    {"id": "T17ER",  "name": "Energy Resources", "range": "16xx / 50xx - 53xx", "exp_sens": 0.2},
     {"id": "T17CM",  "name": "Construction", "range": "17xx - 19xx", "exp_sens": 0.1},
     {"id": "T17CWT", "name": "Commercial/Wholesale", "range": "20xx - 34xx / 80xx", "exp_sens": 0.5},
     {"id": "T17RMC", "name": "Raw Mat. & Chemicals", "range": "35xx - 44xx", "exp_sens": 0.4},
@@ -24,81 +23,66 @@ sectors = [
     {"id": "T17ISO", "name": "IT & Services", "range": "94xx / 96xx+", "exp_sens": 0.7}
 ]
 
-def get_perf(ticker):
-    try:
-        # On télécharge 5 jours pour être sûr d'avoir de la donnée
-        df = yf.download(ticker, period="5d", interval="1d", progress=False)
-        if df.empty or len(df) < 2:
-            return 0.0
-        
-        # Extraction sécurisée (gère le format Multi-Index de yfinance)
-        close_col = df['Close']
-        c1 = float(close_col.iloc[-1].values[0]) if hasattr(close_col.iloc[-1], 'values') else float(close_col.iloc[-1])
-        c2 = float(close_col.iloc[-2].values[0]) if hasattr(close_col.iloc[-2], 'values') else float(close_col.iloc[-2])
-        
-        return ((c1 - c2) / c2) * 100
-    except Exception as e:
-        print(f"Erreur sur {ticker}: {e}")
-        return 0.0
+def get_data():
+    # Nasdaq, USD/JPY, US 10Y Yield
+    tickers = ["^IXIC", "JPY=X", "^TNX"]
+    data = yf.download(tickers, period="2d", interval="1d")
+    
+    ndq_pc = ((data['Close']['^IXIC'].iloc[-1] - data['Close']['^IXIC'].iloc[-2]) / data['Close']['^IXIC'].iloc[-2]) * 100
+    jpy_pc = ((data['Close']['JPY=X'].iloc[-1] - data['Close']['JPY=X'].iloc[-2]) / data['Close']['JPY=X'].iloc[-2]) * 100
+    rate_diff = data['Close']['^TNX'].iloc[-1] - data['Close']['^TNX'].iloc[-2]
+    
+    return ndq_pc, jpy_pc, rate_diff
 
 def run_analysis():
-    ndq = get_perf("^IXIC")
-    jpy = get_perf("JPY=X")
-    rates = get_perf("^TNX")
-    
+    ndq, jpy, rates = get_data()
     results = []
+
     for s in sectors:
-        ndq_impact = ndq * s['exp_sens'] * 5
-        yen_impact_val = jpy * s['exp_sens'] * 15
-        rate_impact = (rates * s.get('rate_sens', 0) * 10)
+        # Calcul de l'impact Yen (USDJPY up = Yen faible = Positif pour exportateurs)
+        yen_impact_score = jpy * s['exp_sens'] * 10
         
-        prob = 50.0 + ndq_impact + yen_impact_val + rate_impact
-        prob = max(10.0, min(90.0, prob)) 
+        # Probabilité de base influencée par le Nasdaq et les taux
+        prob = 50.0 + (ndq * s['exp_sens'] * 5) + yen_impact_score
+        if 'rate_sens' in s:
+            prob += (rates * s['rate_sens'] * 50)
+        
+        prob = max(5, min(95, prob)) # Clamp entre 5% et 95%
         
         results.append({
             "Secteur": s['name'],
             "Codes": s['range'],
             "ID": s['id'],
             "Prob. Hausse": f"{prob:.1f}%",
-            "Impact Yen": "🔥 Positif" if yen_impact_val > 0.3 else "❄️ Négatif" if yen_impact_val < -0.3 else "➖ Neutre",
-            "Biais": "🟢 LONG" if prob > 55 else "🔴 SHORT" if prob < 45 else "🟡 NEUTRE"
+            "Impact Yen": "🔥 Positif" if yen_impact_score > 2 else "❄️ Négatif" if yen_impact_score < -2 else "➖ Neutre",
+            "Biais": "🟢 LONG" if prob > 60 else "🔴 SHORT" if prob < 40 else "🟡 NEUTRE"
         })
     
     return pd.DataFrame(results).sort_values(by="Prob. Hausse", ascending=False)
 
-# --- GÉNÉRATION HTML ---
+# Génération HTML
 df = run_analysis()
-tokyo_tz = pytz.timezone('Asia/Tokyo')
-now = datetime.now(tokyo_tz).strftime('%Y-%m-%d %H:%M:%S')
-
+now = datetime.now().strftime('%Y-%m-%d %H:%M')
 html = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="60"> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Tokyo Alpha Scan</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body {{ background-color: #0d1117; color: #c9d1d9; padding: 30px; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }}
-        .container {{ max-width: 1000px; }}
-        h1 {{ color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }}
-        .status-bar {{ background: #161b22; border: 1px solid #30363d; padding: 10px; border-radius: 6px; margin-bottom: 20px; color: #8b949e; }}
-        .table {{ border-color: #30363d; }}
-        .table-dark {{ background-color: #0d1117; }}
-        .badge-long {{ background-color: #238636; color: white; }}
-        .badge-short {{ background-color: #da3633; color: white; }}
-        .badge-neutral {{ background-color: #6e7681; color: white; }}
+        body {{ background-color: #0e1117; color: #ffffff; padding: 20px; font-family: sans-serif; }}
+        .table {{ border-color: #333; }}
+        .table-dark {{ background-color: #161b22; }}
+        h1 {{ color: #58a6ff; font-weight: bold; }}
+        .update-time {{ color: #8b949e; font-size: 0.9em; }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🇯🇵 TSE Alpha Scanner</h1>
-        <div class="status-bar">
-            🟢 <b>LIVE STATUS :</b> Mis à jour à <b>{now}</b> (Tokyo Time)
-        </div>
-        <div class="table-responsive">
-            {df.to_html(classes='table table-dark table-hover', index=False, border=0)}
-        </div>
-    </div>
+    <h1>🇯🇵 TSE Morning Alpha Scanner</h1>
+    <p class="update-time">Dernière mise à jour : {now} (Tokyo Time)</p>
+    {df.to_html(classes='table table-dark table-striped', index=False)}
+    <footer class="mt-4 text-muted">Analyse basée sur la clôture US et le taux de change JPY.</footer>
 </body>
 </html>
 """
