@@ -1,7 +1,7 @@
 name: Update TSE Alpha
 on:
   schedule:
-    - cron: '45 23 * * *' # 8h45 à Tokyo (15 min avant l'open)
+    - cron: '00 23 * * *' # 8h45 à Tokyo (15 min avant l'open)
   workflow_dispatch:      # Pour lancer le script manuellement
 
 jobs:
